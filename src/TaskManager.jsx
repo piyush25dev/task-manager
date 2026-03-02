@@ -139,6 +139,11 @@ function TaskManager({ user }) {
           setSuccess("Task added successfully!");
           setNewTask({ title: "", description: "" });
           setTaskImage(null);
+
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+
           await fetchTasks();
         }
       }
@@ -151,12 +156,16 @@ function TaskManager({ user }) {
   };
 
   const handleEdit = (task) => {
-    setNewTask({ title: task.title, description: task.description, image_url: task.image_url });
+    setNewTask({
+      title: task.title,
+      description: task.description,
+      image_url: task.image_url,
+    });
     setEditingId(task.id);
   };
 
   const handleCancel = () => {
-    setNewTask({ title: "", description: "" });
+    setNewTask({ title: "", description: "", image_url: null });
     setEditingId(null);
   };
 
