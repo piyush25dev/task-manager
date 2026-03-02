@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "./supabase-client";
 import "./TaskManager.css";
 import { Trash2, Edit2, Plus, CheckCircle, AlertCircle } from "lucide-react";
@@ -11,6 +11,7 @@ function TaskManager({ user }) {
   const [success, setSuccess] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [taskImage, setTaskImage] = useState(null);
+  const fileInputRef = useRef(null);
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -41,31 +42,31 @@ function TaskManager({ user }) {
   }, [fetchTasks]);
 
   useEffect(() => {
-  if (!user?.email) return;
+    if (!user?.email) return;
 
-  const myChannel = supabase
-    .channel("tasks-channel")
-    .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "tasks",
-        filter: `email=eq.${user.email}`,
-      },
-      (payload) => {
-        const newTask = payload.new;
-        setTasks((prev) => [newTask, ...prev]);
-      }
-    )
-    .subscribe((status) => {
-      console.log("Subscribed to tasks channel:", status);
-    });
+    const myChannel = supabase
+      .channel("tasks-channel")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "tasks",
+          filter: `email=eq.${user.email}`,
+        },
+        (payload) => {
+          const newTask = payload.new;
+          setTasks((prev) => [newTask, ...prev]);
+        },
+      )
+      .subscribe((status) => {
+        console.log("Subscribed to tasks channel:", status);
+      });
 
-  return () => {
-    supabase.removeChannel(myChannel);
-  };
-}, [user?.email]);
+    return () => {
+      supabase.removeChannel(myChannel);
+    };
+  }, [user?.email]);
 
   const changeHandler = (e) => {
     const { name, value } = e.target;
@@ -111,9 +112,14 @@ function TaskManager({ user }) {
         if (updateError) {
           setError(`Failed to update task: ${updateError.message}`);
         } else {
-          setSuccess("Task updated successfully!");
-          setNewTask({ title: "", description: "", image_url: "" });
-          setEditingId(null);
+          setSuccess("Task added successfully!");
+          setNewTask({ title: "", description: "" });
+          setTaskImage(null);
+
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+
           await fetchTasks();
         }
       } else {
@@ -131,7 +137,8 @@ function TaskManager({ user }) {
           setError(`Failed to add task: ${insertError.message}`);
         } else {
           setSuccess("Task added successfully!");
-          setNewTask({ title: "", description: "", image_url: "" });
+          setNewTask({ title: "", description: "" });
+          setTaskImage(null);
           await fetchTasks();
         }
       }
@@ -144,7 +151,7 @@ function TaskManager({ user }) {
   };
 
   const handleEdit = (task) => {
-    setNewTask({ title: task.title, description: task.description });
+    setNewTask({ title: task.title, description: task.description, image_url: task.image_url });
     setEditingId(task.id);
   };
 
@@ -251,9 +258,9 @@ function TaskManager({ user }) {
             <input
               type="file"
               accept="image/*"
-              placeholder="Upload a file"
               className="task-input"
               name="file"
+              ref={fileInputRef} // 👈 ADD THIS
               onChange={handleFileChange}
               disabled={loading}
             />
