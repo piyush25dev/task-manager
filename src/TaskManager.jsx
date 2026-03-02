@@ -131,7 +131,7 @@ function TaskManager({ user }) {
           setError(`Failed to add task: ${insertError.message}`);
         } else {
           setSuccess("Task added successfully!");
-          setNewTask({ title: "", description: "" });
+          setNewTask({ title: "", description: "", image_url: "" });
           await fetchTasks();
         }
       }
