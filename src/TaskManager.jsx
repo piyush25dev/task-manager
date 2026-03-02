@@ -112,7 +112,7 @@ function TaskManager({ user }) {
           setError(`Failed to update task: ${updateError.message}`);
         } else {
           setSuccess("Task updated successfully!");
-          setNewTask({ title: "", description: "" });
+          setNewTask({ title: "", description: "", image_url: "" });
           setEditingId(null);
           await fetchTasks();
         }
